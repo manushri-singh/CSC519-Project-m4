@@ -1,0 +1,20 @@
+---
+- hosts: iTrust-deploy-node-1
+  roles:    
+    - iTrustDeploy
+
+- hosts: iTrust-deploy-node-2
+  roles:    
+    - iTrustDeploy
+
+- hosts: iTrust-deploy-node-3
+  roles:    
+    - iTrustDeploy
+
+- hosts: iTrust-deploy-node-4
+  roles:    
+    - iTrustDeploy
+
+- hosts: iTrust-deploy-node-5
+  roles:    
+    - iTrustDeploy

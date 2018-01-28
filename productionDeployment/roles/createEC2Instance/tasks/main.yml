@@ -1,0 +1,170 @@
+- name: Exporting necessary environment variable
+  shell: export ANSIBLE_HOST_KEY_CHECKING=False
+
+- name: Install Prerequisites
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+  with_items:
+    - python3-pip
+  become: yes
+
+- name: Install pymongo to use with mongodb
+  pip:
+    name: "{{item}}"
+    state: present
+  become: yes
+  with_items:
+    - boto
+    - boto3
+
+- name: Checking if EC2 instance for jenkins exists
+  ec2_remote_facts:
+    aws_access_key: "{{aws_access_key}}"
+    aws_secret_key: "{{aws_secret_key}}"
+    region: "{{aws_region}}"
+    filters:
+      "tag:Name": jenkins-mysql
+      "instance-state-code": "16"
+  register: ec2_jenkins
+
+- name: Checking if EC2 instance for iTrust exists
+  ec2_remote_facts:
+    aws_access_key: "{{aws_access_key}}"
+    aws_secret_key: "{{aws_secret_key}}"
+    region: "{{aws_region}}"
+    filters:
+      "tag:Name": iTrust
+      "instance-state-code": "16"
+  register: ec2_iTrust
+
+- name: Create security group
+  ec2_group:
+    name: iTrust-deploy-group
+    description: "A Security for iTrust group"
+    region: "{{aws_region}}"
+    aws_access_key: "{{aws_access_key}}"
+    aws_secret_key: "{{aws_secret_key}}"
+    rules:
+      - proto: all
+        cidr_ip: 0.0.0.0/0
+    rules_egress:
+      - proto: all
+        cidr_ip: 0.0.0.0/0
+  register: basic_firewall
+
+- name: Launch new instances for jenkins & mysql
+  ec2:
+    key_name: "{{ key_pair }}"
+    aws_access_key: "{{aws_access_key}}"
+    aws_secret_key: "{{aws_secret_key}}"
+    instance_type: "t2.xlarge"
+    group_id: "{{basic_firewall.group_id}}"
+    image: "{{ ami_id }}"
+    wait: true
+    region: "{{ aws_region }}"
+    instance_tags:
+      Name: jenkins-mysql
+    count: 1
+  register: jenkins_instance
+  when: ec2_jenkins.instances | length==0
+
+- name: Launch Instances for iTrust deployment
+  ec2:
+    key_name: "{{ key_pair }}"
+    aws_access_key: "{{aws_access_key}}"
+    aws_secret_key: "{{aws_secret_key}}"
+    instance_type: "{{ instance_type }}"
+    group_id: "{{basic_firewall.group_id}}"
+    image: "{{ ami_id }}"
+    wait: true
+    region: "{{ aws_region }}"
+    count: 1
+    instance_tags:
+      Name: iTrust
+  register: new_instances
+  when: ec2_iTrust.instances | length!=5
+  with_items: 
+    - tags: ['Name', 'iTrust1']
+    - tags: ['Name', 'iTrust2']
+    - tags: ['Name', 'iTrust3']
+    - tags: ['Name', 'iTrust4']
+    - tags: ['Name', 'iTrust5']
+
+
+- name: Fethching Public IP for existing jenkins instance
+  set_fact: jenkins_ec2_ip="{{ec2_jenkins.instances[0].public_ip_address}}"
+  when: ec2_jenkins.instances|length>0
+
+- name: Fetching Public IP For newly created jenkins Instance. 
+  set_fact: jenkins_ec2_ip="{{ jenkins_instance.instances[0].public_ip }}"
+  when: ec2_jenkins.instances|length==0
+
+- name: Fetching Private IP for existing jenkins instance
+  set_fact: mysql_ec2_ip="{{ec2_jenkins.instances[0].private_ip_address}}"
+  when: ec2_jenkins.instances|length>0
+
+- name: Fetching Private IP for newly created jenkins instance 
+  set_fact: mysql_ec2_ip="{{ jenkins_instance.instances[0].private_ip }}"
+  when: ec2_jenkins.instances|length==0
+
+- name: Add the instance to group for installing Jenkins
+  add_host:
+    hostname: "{{ jenkins_ec2_ip }}"
+    groupname: iTrust-checkbox-jenkins-mysql
+
+- name: Wait for the EC2 instance to completely boot up
+  wait_for:
+    host: "{{ jenkins_ec2_ip }}"
+    port: 22
+    delay: 60
+    timeout: 320
+    state: started
+  when: ec2_jenkins.instances|length==0       
+  
+- name: Add SSH fingerprints                                         
+  shell: ssh-keyscan -H {{ item }} >> ~/.ssh/known_hosts          
+  with_items: 
+    - "{{ jenkins_ec2_ip }}"
+
+- name: Get Private IP of existing iTrust-0 group instances
+  set_fact: iTrust0_ec2_ip="{{ec2_iTrust.instances[0].private_ip_address}}"
+  when: ec2_iTrust.instances|length==5
+
+- name: Get Private IP of existing iTrust-1 group instances
+  set_fact: iTrust1_ec2_ip="{{ec2_iTrust.instances[1].private_ip_address}}"
+  when: ec2_iTrust.instances|length==5
+
+- name: Get Private IP of existing iTrust-2 group instances
+  set_fact: iTrust2_ec2_ip="{{ec2_iTrust.instances[2].private_ip_address}}"
+  when: ec2_iTrust.instances|length==5
+
+- name: Get Private IP of existing iTrust-3 group instances
+  set_fact: iTrust3_ec2_ip="{{ec2_iTrust.instances[3].private_ip_address}}"
+  when: ec2_iTrust.instances|length==5
+
+- name: Get Private IP of existing iTrust-4 group instances
+  set_fact: iTrust4_ec2_ip="{{ec2_iTrust.instances[4].private_ip_address}}"
+  when: ec2_iTrust.instances|length==5
+
+
+- name: Get Private IP of new iTrust-0 group instances
+  set_fact: iTrust0_ec2_ip="{{new_instances.results[0]['instances'][0].private_ip}}"
+  when: ec2_iTrust.instances|length!=5
+
+- name: Get Private IP of new iTrust-1 group instances
+  set_fact: iTrust1_ec2_ip="{{new_instances.results[1]['instances'][0].private_ip}}"
+  when: ec2_iTrust.instances|length!=5
+
+- name: Get Private IP of new iTrust-2 group instances
+  set_fact: iTrust2_ec2_ip="{{new_instances.results[2]['instances'][0].private_ip}}"
+  when: ec2_iTrust.instances|length!=5
+
+- name: Get Private IP of new iTrust-3 group instances
+  set_fact: iTrust3_ec2_ip="{{new_instances.results[3]['instances'][0].private_ip}}"
+  when: ec2_iTrust.instances|length!=5
+
+- name: Get Private IP of new iTrust-4 group instances
+  set_fact: iTrust4_ec2_ip="{{new_instances.results[4]['instances'][0].private_ip}}"
+  when: ec2_iTrust.instances|length!=5

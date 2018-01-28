@@ -1,0 +1,14 @@
+[iTrust-deploy-node-1]
+{{ hostvars['localhost']['iTrust0_ec2_ip']}} ansible_user=ubuntu ansible_ssh_private_key_file=~/secret-nodes.yml ansible_python_interpreter=/usr/bin/python3 ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[iTrust-deploy-node-2]
+{{ hostvars['localhost']['iTrust1_ec2_ip']}} ansible_user=ubuntu ansible_ssh_private_key_file=~/secret-nodes.yml ansible_python_interpreter=/usr/bin/python3 ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[iTrust-deploy-node-3]
+{{ hostvars['localhost']['iTrust2_ec2_ip']}} ansible_user=ubuntu ansible_ssh_private_key_file=~/secret-nodes.yml ansible_python_interpreter=/usr/bin/python3 ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[iTrust-deploy-node-4]
+{{ hostvars['localhost']['iTrust3_ec2_ip']}} ansible_user=ubuntu ansible_ssh_private_key_file=~/secret-nodes.yml ansible_python_interpreter=/usr/bin/python3 ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[iTrust-deploy-node-5]
+{{ hostvars['localhost']['iTrust4_ec2_ip']}} ansible_user=ubuntu ansible_ssh_private_key_file=~/secret-nodes.yml ansible_python_interpreter=/usr/bin/python3 ansible_ssh_common_args='-o StrictHostKeyChecking=no'

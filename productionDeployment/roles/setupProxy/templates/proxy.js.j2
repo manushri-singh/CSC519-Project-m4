@@ -1,0 +1,24 @@
+var http = require('http');
+var httpProxy = require('http-proxy');
+
+var proxy = httpProxy.createProxyServer({});
+
+var count = 1;
+
+var server = http.createServer(function(req, res) {
+	++count;
+
+	if(count%3==0)
+	{
+		proxy.web(req, res, {target: 'http://{{ hostvars['localhost']['checkbox_canary_ec2_ip'] }}'}, function(e) {
+			proxy.web(req, res, {target: 'http://{{ hostvars['localhost']['checkbox_ec2_ip'] }}'});
+		});
+	}	
+	else
+	{
+		proxy.web(req, res, {target: 'http://{{ hostvars['localhost']['checkbox_ec2_ip'] }}'});
+	}
+}); 
+
+server.listen('80');
+

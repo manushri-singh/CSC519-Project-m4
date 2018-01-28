@@ -1,0 +1,20 @@
+---
+- hosts: localhost
+  roles:
+    - createEC2Instance
+    
+- hosts: iTrust-checkbox-jenkins-mysql
+  vars:
+    ansible_ssh_private_key_file: "./ubuntu-host.pem"
+    host_key_checking: False
+    ansible_python_interpreter: "/usr/bin/python3"
+  remote_user: "ubuntu"
+  connection: ssh
+  gather_facts: False
+  roles:
+    - installJenkins
+    - installAnsible
+    - iTrustSetup
+    - iTrustJenkinsJob
+    - createBotBuildJob
+    - fixMySqlIp

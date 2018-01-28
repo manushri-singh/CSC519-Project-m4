@@ -1,0 +1,3 @@
+- name: "Installing mysql client"
+  apt: package="mysql-client" state="present"
+  become: yes

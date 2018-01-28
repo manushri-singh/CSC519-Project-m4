@@ -1,0 +1,21 @@
+- name: Stopping Apache server
+  command: nohup {{ apache_install_location }}/tomcat9/bin/shutdown.sh
+  become: yes
+  ignore_errors: yes
+
+- name: "Check whether path exists"
+  file: path={{ apacheDeployLocation }} state=directory
+  become: yes
+
+- debug: 
+    var: iTrustTempLocation
+
+- name: "Deploying war file to tomcat"
+  unarchive:
+    src: "{{iTrustTempLocation}}/iTrust/target/iTrust-23.0.0.war"
+    dest: "{{ apacheDeployLocation }}"
+  become: yes
+
+- name: "Starting Apache server"
+  command: nohup {{ apache_install_location }}/tomcat9/bin/startup.sh
+  become: yes

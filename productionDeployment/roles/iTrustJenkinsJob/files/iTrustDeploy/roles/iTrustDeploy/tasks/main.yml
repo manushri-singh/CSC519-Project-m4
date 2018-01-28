@@ -1,0 +1,3 @@
+- include: apacheSetup.yml
+- include: mysqlClientSetup.yml
+- include: deploy_war.yml

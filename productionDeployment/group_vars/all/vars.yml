@@ -1,0 +1,48 @@
+jenkins_ip: "{{ hostvars['localhost']['jenkins_ec2_ip']}}"
+jenkins_port: 8080
+ansible_home_dir: "/home/ubuntu/"
+jenkins_cli_jar_loc: "{{ansible_home_dir}}"
+jenkins_home_dir: /var/lib/jenkins/
+
+jenkins_iTrust_job_name: iTrustJob
+jenkins_checkbox_job_name: checkbox-job
+jenkins_checkbox_canary_job_name: checkbox-canary-job 
+jenkins_iTrust_bot_job_name: iTrust-bot-job
+
+jenkins_git_secret_text: git_secret_token
+
+jenkins_gerrit_secret_ssh: gerrit_ssh_config
+
+gerrit_ID: csc-devops17
+
+gerrit_project_name: SilleBille/iTrust
+gerrit_project_url: review.gerrithub.io:29418/{{gerrit_project_name}}
+gerrit_server_name: gerrithub-iTrust
+
+jenkins_username: mkd_test1
+jenkins_password: !vault |
+      $ANSIBLE_VAULT;1.1;AES256
+      35613564316639383334356239393261366364326431313663396435363631396539663230386530
+      3639333765396633313435393630373637663763306236630a663264623132313662613663653761
+      35323234383363623365613237393665383064386439653730656565313639303964383530643364
+      3464333837376564390a613363326636363437646564363536393462356261396262633561656438
+      38343861353136386336333331633333343363633166373039303561356434323637
+
+jenkins:
+  url_username: "{{jenkins_username}}"
+  url: "http://{{jenkins_ip}}:{{jenkins_port}}"
+  validate_certs: no
+
+GIT_ID: "{{lookup('env', 'GIT_ID_P')}}"
+GIT_TOKEN: "{{lookup('env', 'GIT_TOKEN_P')}}"
+
+github_iTrust_project: https://github.com/SilleBille/iTrust.git
+github_iTrust_authenticated: https://{{GIT_ID}}:{{GIT_TOKEN}}@github.com/SilleBille/iTrust.git
+
+
+aws_access_key: "{{ansible_env.AWS_KEY}}"
+aws_secret_key: "{{ansible_env.AWS_SECRET_KEY}}"
+aws_region: us-east-2
+ami_id: ami-336b4456
+instance_type: t2.micro
+key_pair: ubuntu-host

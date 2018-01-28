@@ -1,0 +1,28 @@
+- name: Remove previous iTrust clone if exists
+  file:
+    path: "{{ansible_home_dir}}/iTrust"
+    state: absent
+  become: yes
+
+- name: Clone iTrust
+  git:
+    repo: "{{github_iTrust_authenticated}}"
+    dest: "{{ansible_home_dir}}/iTrust"
+
+- name: Replacing the IP Address for MySQL
+  lineinfile:
+    path: "{{ansible_home_dir}}/iTrust/iTrust/WebRoot/META-INF/context.xml"
+    regexp: 'url=.*'
+    line: "url=\"jdbc:mysql://{{ hostvars['localhost']['mysql_ec2_ip']}}/itrust?createDatabaseIfNotExist=true\""
+  register: ipFixed
+
+- name: Committing and pushing changes
+  shell: "git add . && git commit -m \"Fixing IP address for MySQL\" && git push origin master"
+  args:
+    chdir: "{{ansible_home_dir}}/iTrust/"
+  when: ipFixed.changed
+
+  
+# - name: Build Jenkins Job for iTrust
+#   become: yes
+#   shell: "java -jar {{ jenkins_cli_jar_loc }}/jenkins-cli.jar -s http://{{ jenkins_ip }}:{{ jenkins_port }}/ build {{ jenkins_iTrust_job_name }} --username {{jenkins_username}} --password {{jenkins_password}} -s"

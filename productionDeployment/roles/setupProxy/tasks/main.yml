@@ -1,0 +1,32 @@
+- name: Install npm
+  apt:
+    pkg: '{{ item }}'
+    state: present
+    update_cache: yes
+  with_items:
+    - nodejs-legacy
+    - npm
+  become: true
+
+- name: Install required packages
+  npm:
+    global: yes
+    name: '{{ item }}'
+  with_items:
+    - forever
+    - http
+  become: yes
+
+- name: Install http-proxy
+  npm:
+    name: http-proxy
+    path: "{{ ansible_env.HOME }}"
+
+- name: Copy script to proxy server
+  template:
+    src: proxy.js.j2
+    dest: "{{ ansible_env.HOME }}/proxy.js"
+
+- name: Run nodejs for proxy
+  shell: cd {{ ansible_env.HOME }}; forever stopall; forever start proxy.js 
+  become: yes

@@ -1,0 +1,73 @@
+- include_vars: apache_vars.yml
+- include_vars: credentials.yml
+
+- name: Install Prerequisites
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+  with_items:
+    - git
+    - maven
+    - build-essential
+    - python-software-properties 
+    - debconf-utils
+    - unzip
+  become: yes
+ 
+- name: Add Oracle Repository
+  apt_repository:
+    repo: 'ppa:webupd8team/java'
+  become: yes
+ 
+- name: Accept Oracle License
+  debconf: 
+    name: 'oracle-java8-installer' 
+    question: 'shared/accepted-oracle-license-v1-1' 
+    value: 'true' 
+    vtype: 'select'
+  become: yes
+ 
+- name: Install Java
+  apt:
+    name: oracle-java8-installer    
+    state: present
+    update_cache: yes
+  become: yes
+  
+- name: "Download Apache Tomcat 9.0 Archive"
+  get_url:
+    url:  http://www-us.apache.org/dist/tomcat/tomcat-9/v9.0.1/bin/{{apache_file_name}}.tar.gz
+    dest: "{{apache_install_location}}"
+    force: no
+  become: yes
+
+- name: "Unzipping Apache Tomcat Archive"
+  unarchive:
+    src: "{{apache_install_location}}/{{apache_file_name}}.tar.gz"
+    dest: /usr/local/
+    remote_src: yes
+  become: yes
+
+- name: "Removing previous Apache Tomcat instances"
+  file:
+    path: "{{apache_install_location}}/tomcat9"
+    state: absent
+  become: true
+
+- name: "Renaming Apache Tomcat Directory"
+  command: mv {{apache_install_location}}/{{apache_file_name}} {{apache_install_location}}/tomcat9
+  become: yes
+
+- name: "Setting up user for Apache Tomcat"
+  template: src=apache_template.xml.j2 dest={{ apache_install_location }}/tomcat9/conf/tomcat-users.xml
+  become: yes
+
+# - name: "Setting up Apache Tomcat Variables"
+#   shell: echo "export CATALINA_HOME="{{apache_install_location}}/tomcat9"" >> /etc/environment
+#   become: yes
+# - shell: echo "export JAVA_HOME="/usr/lib/jvm/java-8-oracle"" >> /etc/environment
+#   become: yes
+# - shell: echo "export JRE_HOME="/usr/lib/jvm/java-8-oracle/jre"" >> /etc/environment
+#   become: yes
+
